@@ -22,6 +22,15 @@ func TestServer() {
 	http.ListenAndServe("127.0.0.1:3202", nil)
 }
 
+func GearmanResponseHandler(r *gearman.Response) {
+
+	result, err := r.Result()
+	if err != nil {
+		log.Printf("Error in response %s", err)
+	}
+	log.Println(string(result))
+}
+
 func main() {
 
 	go TestServer()
@@ -37,6 +46,8 @@ func main() {
 		log.Println("Response")
 		log.Println(r)
 	})
+
+	_, err = client.Do("echo", nil, 0, GearmanResponseHandler)
 
 	time.Sleep(20 * time.Second)
 }
