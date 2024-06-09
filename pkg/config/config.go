@@ -17,7 +17,7 @@ type JobConfig struct {
 type ShellJobConfig struct {
 	Command    string            `yaml:"command"`
 	Args       []string          `yaml:"args"`
-	LogFile    string            `yaml:"log_gile"`
+	LogFile    string            `yaml:"log_file"`
 	WorkingDir string            `yaml:"working_dir"`
 	Env        map[string]string `yaml:"env"`
 	Timeout    string            `yaml:"timeout,omitempty"`
@@ -25,7 +25,7 @@ type ShellJobConfig struct {
 
 type HttpJobConfig struct {
 	Url     string            `yaml:"url"`
-	LogFile string            `yaml:"log_gile"`
+	LogFile string            `yaml:"log_file"`
 	Headers map[string]string `yaml:"headers"`
 	Method  string            `yaml:"method"`
 	Timeout string            `yaml:"timeout,omitempty"`
