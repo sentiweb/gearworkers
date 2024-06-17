@@ -3,7 +3,9 @@
 Simple gearman worker to handle simple case tasks like:
 
 - Run a command in a external program (using shellexecutor)
-- Run an http request as a task (task payload )
+- Run an http request as a task (task payload)
+
+Several workers can be defined in the same instance of the program (to adjust to the expected workload).
 
 # Configuration
 
@@ -47,7 +49,7 @@ jobs:
     log_file: "/path/to/logfile"
 ```
 
-# Http Executor
+# Http Executor: Task to relay HTTP Query
 
 The executor accepts a payload as a json object
 
@@ -61,6 +63,6 @@ The executor accepts a payload as a json object
 }
 ```
 
-`query` object can be used to add entry in the query parameters of the URL
-`body` can be used to provide a body (only for POST/PUT method)
-`headers` can be used to add header to the query
+- `query` object can be used to add entry in the query parameters of the URL
+- `body` can be used to provide a body (only for POST/PUT method). It can be a string or a json object or a list. In this case it will be serialized as json. The 'Content-Type' header is not set automatically but should be provided.
+- `headers` can be used to add header to the query
