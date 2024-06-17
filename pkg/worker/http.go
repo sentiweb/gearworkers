@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -48,6 +49,18 @@ func (executor *HttpExecutor) Init() error {
 	return nil
 }
 
+func extractBody(body interface{}) (io.Reader, error) {
+	s, ok := body.(string)
+	if ok {
+		return strings.NewReader(s), nil
+	}
+	b, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(b), nil
+}
+
 func (executor *HttpExecutor) Run(job gearman.Job) ([]byte, error) {
 
 	jobId := job.UniqueId()
@@ -75,8 +88,12 @@ func (executor *HttpExecutor) Run(job gearman.Job) ([]byte, error) {
 	var body io.Reader
 
 	if method == "POST" || method == "PUT" {
-		if len(payload.Body) > 0 {
-			body = strings.NewReader(payload.Body)
+		body = nil
+		if payload.Body != nil {
+			body, err = extractBody(payload.Body)
+			if err != nil {
+				log.Printf("[Job %s] Unable to parse job body : %s", jobId, err)
+			}
 		}
 	} else {
 		body = nil
