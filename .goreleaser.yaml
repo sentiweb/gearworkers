@@ -10,6 +10,7 @@ builds:
   - 
     id: "gearworkers"
     main: './cmd/gearworkers'
+    binary: "gearworkers"
     env:
       - CGO_ENABLED=0
     goarch:
@@ -20,8 +21,9 @@ builds:
       - windows
       - darwin
   - 
-    id: "rocketchat-client"
+    id: "rocketchat-msg"
     main: './cmd/rocket'
+    binary: "rocketchat-msg"
     env:
       - CGO_ENABLED=0
     goarch:
