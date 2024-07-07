@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/VictoriaMetrics/metrics"
 	"github.com/sentiweb/gearworkers/pkg/admin"
 	"github.com/sentiweb/gearworkers/pkg/config"
 )
@@ -42,6 +43,10 @@ func (h *HttpServer) Start() error {
 			WriteError(fmt.Sprintf("Unable to serialize status : %s", err), w, 501)
 		}
 		w.Write(b)
+	})
+
+	http.HandleFunc("/metrics", func(w http.ResponseWriter, req *http.Request) {
+		metrics.WritePrometheus(w, true)
 	})
 
 	log.Printf("Starting server at port %s ...", h.addr)

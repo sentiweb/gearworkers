@@ -40,14 +40,14 @@ func (m *Manager) Start() error {
 			if shellConfig == nil {
 				return fmt.Errorf("job %d %s : shell config is not provided", idx, job.Name)
 			}
-			executor = NewShellExecutor(*shellConfig)
+			executor = NewShellExecutor(job.Name, *shellConfig)
 		}
 		if job.Type == "http" {
 			httpConfig := job.HttpConfig
 			if httpConfig == nil {
 				return fmt.Errorf("job %d %s : http config is not provided", idx, job.Name)
 			}
-			executor = NewHttpExecutor(*httpConfig)
+			executor = NewHttpExecutor(job.Name, *httpConfig)
 		}
 		if executor == nil {
 			return fmt.Errorf("job %d %s : Unknown type '%s'", idx, job.Name, job.Type)
