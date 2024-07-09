@@ -40,6 +40,7 @@ func main() {
 	file := flag.String("file", "", "JSON file containing message")
 	wait := flag.Bool("wait", false, "Wait for response")
 	quiet := flag.Bool("quiet", false, "Do not log message")
+	name := flag.String("name", "chat", "Gearman function name to call to send message")
 
 	var body []byte
 	var err error
@@ -59,6 +60,11 @@ func main() {
 		payload := types.HttpJobPayload{Body: m}
 		body, _ = json.Marshal(payload)
 	}
+
+	if *name == "" {
+		log.Fatalf("name must not be empty")
+	}
+
 	if !*quiet {
 		log.Println("Connecting to gearman")
 	}
@@ -66,17 +72,25 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error launching client %s", err)
 	}
+	var exitCode int = 0
 	if *wait {
-		_, err = client.Do("chat", []byte(body), 0, func(r *gearman.Response) {
+		_, err = client.Do(*name, []byte(body), 0, func(r *gearman.Response) {
 			if !*quiet {
-				log.Println("Response")
-				log.Println(r)
+				result, result_err := r.Result()
+				if result_err != nil {
+					log.Printf("Gearman response error : %s", result_err)
+					exitCode = 1
+				} else {
+					log.Println(result)
+				}
 			}
 		})
 	} else {
-		_, err = client.DoBg("chat", []byte(body), 0)
+		_, err = client.DoBg(*name, []byte(body), 0)
 	}
 	if err != nil {
 		log.Printf("Error during send : %s", err)
+		exitCode = 1
 	}
+	os.Exit(exitCode)
 }
