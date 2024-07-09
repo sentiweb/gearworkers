@@ -14,12 +14,14 @@ import (
 
 type ShellExecutor struct {
 	config  config.ShellJobConfig
+	metrics *ExecutorMetrics
 	timeout time.Duration
 }
 
-func NewShellExecutor(cfg config.ShellJobConfig) *ShellExecutor {
+func NewShellExecutor(name string, cfg config.ShellJobConfig) *ShellExecutor {
 	return &ShellExecutor{
-		config: cfg,
+		config:  cfg,
+		metrics: NewExecutorMetrics("shell", name),
 	}
 }
 
@@ -75,6 +77,8 @@ func (executor *ShellExecutor) Run(job gearman.Job) ([]byte, error) {
 	if err != nil {
 		log.Printf("Job %s error configuring output : %v", jobId, err)
 	}
+
+	executor.metrics.IncTotalCounter()
 
 	err = cmd.Run()
 	quit := cmd.ProcessState.ExitCode()

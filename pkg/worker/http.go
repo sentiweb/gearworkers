@@ -18,12 +18,14 @@ import (
 
 type HttpExecutor struct {
 	config  config.HttpJobConfig
+	metrics *ExecutorMetrics
 	timeout time.Duration
 }
 
-func NewHttpExecutor(cfg config.HttpJobConfig) *HttpExecutor {
+func NewHttpExecutor(name string, cfg config.HttpJobConfig) *HttpExecutor {
 	return &HttpExecutor{
-		config: cfg,
+		config:  cfg,
+		metrics: NewExecutorMetrics("http", name),
 	}
 }
 
@@ -117,6 +119,8 @@ func (executor *HttpExecutor) Run(job gearman.Job) ([]byte, error) {
 	populateHeaders(req, payload.Headers)
 
 	client := &http.Client{Timeout: executor.timeout}
+
+	executor.metrics.IncTotalCounter()
 
 	resp, err := client.Do(req)
 	if err != nil {

@@ -1,8 +1,13 @@
 package config
 
 type AppConfig struct {
-	GearmanServer string      `yaml:"gearman"`
-	Jobs          []JobConfig `yaml:"jobs"`
+	GearmanServer string       `yaml:"gearman"`
+	Server        ServerConfig `yaml:"server"`
+	Jobs          []JobConfig  `yaml:"jobs"`
+}
+
+type ServerConfig struct {
+	Addr string
 }
 
 type JobConfig struct {

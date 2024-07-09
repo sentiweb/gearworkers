@@ -10,6 +10,7 @@ import (
 	"runtime"
 
 	"github.com/sentiweb/gearworkers/pkg/config"
+	"github.com/sentiweb/gearworkers/pkg/server"
 	"github.com/sentiweb/gearworkers/pkg/worker"
 	"gopkg.in/yaml.v3"
 )
@@ -49,6 +50,16 @@ func main() {
 	}
 
 	fmt.Printf("Started workers using %d goroutines\n", runtime.NumGoroutine())
+
+	if cfg.Server.Addr != "" {
+		srv := server.NewHttpServer(cfg)
+		go func() {
+			err := srv.Start()
+			if err != nil {
+				log.Printf("Http Server error : %s", err)
+			}
+		}()
+	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)

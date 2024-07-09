@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"time"
 
 	gearman "github.com/mikespook/gearman-go/client"
 	"github.com/sentiweb/gearworkers/pkg/types"
@@ -39,6 +38,8 @@ func main() {
 	channel := flag.String("channel", "", "Channel")
 	text := flag.String("text", "", "Text")
 	file := flag.String("file", "", "JSON file containing message")
+	wait := flag.Bool("wait", false, "Wait for response")
+	quiet := flag.Bool("quiet", false, "Do not log message")
 
 	var body []byte
 	var err error
@@ -58,18 +59,24 @@ func main() {
 		payload := types.HttpJobPayload{Body: m}
 		body, _ = json.Marshal(payload)
 	}
-
-	log.Println("Connecting to gearman")
+	if !*quiet {
+		log.Println("Connecting to gearman")
+	}
 	client, err := gearman.New("tcp", "127.0.0.1:4730")
 	if err != nil {
 		log.Fatalf("Error launching client %s", err)
 	}
-	log.Println("Testing ")
-
-	_, err = client.Do("chat", []byte(body), 0, func(r *gearman.Response) {
-		log.Println("Response")
-		log.Println(r)
-	})
-
-	time.Sleep(20 * time.Second)
+	if *wait {
+		_, err = client.Do("chat", []byte(body), 0, func(r *gearman.Response) {
+			if !*quiet {
+				log.Println("Response")
+				log.Println(r)
+			}
+		})
+	} else {
+		_, err = client.DoBg("chat", []byte(body), 0)
+	}
+	if err != nil {
+		log.Printf("Error during send : %s", err)
+	}
 }
