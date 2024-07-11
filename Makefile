@@ -7,3 +7,6 @@ run:
 
 tester:
 	go run ./cmd/tester/
+
+release:
+	goreleaser release --skip=publish --clean
