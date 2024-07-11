@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -63,6 +65,29 @@ func extractBody(body interface{}) (io.Reader, error) {
 	return bytes.NewReader(b), nil
 }
 
+var UrlVariableRegex = regexp.MustCompile("{(\\w+)}")
+
+func BuildUrl(template string, vars map[string]string) (string, error) {
+	matches := UrlVariableRegex.FindAllStringSubmatch(template, -1)
+
+	if len(matches) == 0 {
+		return template, nil
+	}
+
+	url := template
+	for _, match := range matches {
+		varName := match[1]
+		varExpr := match[0]
+
+		value, ok := vars[varName]
+		if !ok {
+			return "", fmt.Errorf("missing expected url param '%s' ", varName)
+		}
+		url = strings.ReplaceAll(url, varExpr, value)
+	}
+	return url, nil
+}
+
 func (executor *HttpExecutor) Run(job gearman.Job) ([]byte, error) {
 
 	jobId := job.UniqueId()
@@ -74,8 +99,14 @@ func (executor *HttpExecutor) Run(job gearman.Job) ([]byte, error) {
 		return nil, err
 	}
 
+	svcUrl, err := BuildUrl(executor.config.Url, payload.UrlParams)
+	if err != nil {
+		log.Printf("[Job %s] Unable to parse url params : %s", jobId, err)
+		return nil, err
+	}
+
 	// Url parsing is checked during init phase
-	u, _ := url.Parse(executor.config.Url)
+	u, _ := url.Parse(svcUrl)
 
 	if len(payload.QueryParams) > 0 {
 		queryValues := u.Query()
