@@ -14,6 +14,9 @@ func main() {
 
 	if command == "hello" {
 		fmt.Println("Hello")
+		for _, e := range os.Environ() {
+			fmt.Println(e)
+		}
 	}
 
 	if command == "echo" {

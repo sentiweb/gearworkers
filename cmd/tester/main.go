@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	gearman "github.com/mikespook/gearman-go/client"
@@ -23,7 +24,7 @@ func TestServer() {
 }
 
 func GearmanResponseHandler(r *gearman.Response) {
-
+	log.Printf("Response recieved for %s", r.Handle)
 	result, err := r.Result()
 	if err != nil {
 		log.Printf("Error in response %s", err)
@@ -33,6 +34,11 @@ func GearmanResponseHandler(r *gearman.Response) {
 
 func main() {
 
+	command := ""
+	if len(os.Args) > 1 {
+		command = os.Args[1]
+	}
+
 	go TestServer()
 
 	log.Println("Connecting to gearman")
@@ -40,14 +46,22 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error launching client %s", err)
 	}
-	log.Println("Testing ")
-	body := `{"query":{"test":"toto"},"headers":{"X-Tester":"TestValue"}}`
-	_, err = client.Do("local_http", []byte(body), 0, func(r *gearman.Response) {
-		log.Println("Response")
-		log.Println(r)
-	})
 
-	_, err = client.Do("echo", nil, 0, GearmanResponseHandler)
+	if command == "local_http" {
+
+		log.Println("Testing ")
+		body := `{"query":{"test":"toto"},"headers":{"X-Tester":"TestValue"}}`
+		_, err = client.Do("local_http", []byte(body), 0, func(r *gearman.Response) {
+			log.Println("Response")
+			log.Println(r)
+		})
+
+	}
+
+	if command == "dummy" {
+		body := `{"env":{"MY_DUMMY_ENV":"toto"}}`
+		_, err = client.Do("dummy", []byte(body), 0, GearmanResponseHandler)
+	}
 
 	time.Sleep(20 * time.Second)
 }
