@@ -8,5 +8,8 @@ run:
 tester:
 	go run ./cmd/tester/
 
+build-dummy:
+	go build ./cmd/dummy
+
 release:
 	goreleaser release --skip=publish --clean
