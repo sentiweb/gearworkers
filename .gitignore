@@ -2,3 +2,5 @@ config.yaml
 dist
 gearworkers.exe
 .envrc
+*.exe
+*.log
