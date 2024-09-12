@@ -15,6 +15,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var version string
+var commit string
+var date string
+
 func loadConfig(file string) *config.AppConfig {
 	f, err := os.Open(file)
 	if err != nil {
@@ -33,6 +37,7 @@ func loadConfig(file string) *config.AppConfig {
 }
 
 func main() {
+	fmt.Printf("Gearwokers %s commit:%s (%s)\n", version, commit, date)
 
 	configPtr := flag.String("config", "config.yaml", "Configuration file path")
 
@@ -48,7 +53,6 @@ func main() {
 		log.Println(err)
 		return
 	}
-
 	fmt.Printf("Started workers using %d goroutines\n", runtime.NumGoroutine())
 
 	if cfg.Server.Addr != "" {
