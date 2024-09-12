@@ -8,6 +8,9 @@ run:
 tester:
 	go run ./cmd/tester/
 
+chat:
+	go run ./cmd/rocket -name=chat -channel=test --text="hello world"
+
 build-dummy:
 	go build ./cmd/dummy
 
