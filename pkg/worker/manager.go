@@ -25,6 +25,39 @@ type Executor interface {
 	Init() error
 }
 
+var (
+	ErrConfigNotProvided     = errors.New("shell config is not provided")
+	ErrHttpConfigNotProvided = errors.New("http config is not provided")
+	ErrExecutorInit          = errors.New("error during job initialization")
+)
+
+// create An executor instance and initialize it
+func createExecutor(job config.JobConfig) (Executor, error) {
+	var executor Executor = nil
+	if job.Type == "shell" {
+		shellConfig := job.ShellConfig
+		if shellConfig == nil {
+			return nil, ErrConfigNotProvided
+		}
+		executor = NewShellExecutor(job.Name, *shellConfig)
+	}
+	if job.Type == "http" {
+		httpConfig := job.HttpConfig
+		if httpConfig == nil {
+			return nil, ErrHttpConfigNotProvided
+		}
+		executor = NewHttpExecutor(job.Name, *httpConfig)
+	}
+	if executor == nil {
+		return nil, fmt.Errorf("Unknown job type '%s'", job.Type)
+	}
+	err := executor.Init()
+	if err != nil {
+		return nil, errors.Join(ErrExecutorInit, err)
+	}
+	return executor, nil
+}
+
 func NewManager(cfg *config.AppConfig) *Manager {
 	return &Manager{
 		config:  cfg,
@@ -34,26 +67,12 @@ func NewManager(cfg *config.AppConfig) *Manager {
 
 func (m *Manager) Start() error {
 	for idx, job := range m.config.Jobs {
-		var executor Executor = nil
-		if job.Type == "shell" {
-			shellConfig := job.ShellConfig
-			if shellConfig == nil {
-				return fmt.Errorf("job %d %s : shell config is not provided", idx, job.Name)
-			}
-			executor = NewShellExecutor(job.Name, *shellConfig)
-		}
-		if job.Type == "http" {
-			httpConfig := job.HttpConfig
-			if httpConfig == nil {
-				return fmt.Errorf("job %d %s : http config is not provided", idx, job.Name)
-			}
-			executor = NewHttpExecutor(job.Name, *httpConfig)
-		}
-		if executor == nil {
-			return fmt.Errorf("job %d %s : Unknown type '%s'", idx, job.Name, job.Type)
+		executor, err := createExecutor(job)
+		if err != nil {
+			return errors.Join(fmt.Errorf("error creating job %d '%s'", idx, job.Name), err)
 		}
 		worker := NewWorker(job, executor)
-		err := worker.Register(m.config.GearmanServer)
+		err = worker.Register(m.config.GearmanServer)
 		if err != nil {
 			return errors.Join(fmt.Errorf("error registering job %d '%s'", idx, job.Name), err)
 		}

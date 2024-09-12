@@ -29,9 +29,11 @@ type ShellJobConfig struct {
 }
 
 type HttpJobConfig struct {
-	Url     string            `yaml:"url"`
-	LogFile string            `yaml:"log_file"`
-	Headers map[string]string `yaml:"headers"`
-	Method  string            `yaml:"method"`
-	Timeout string            `yaml:"timeout,omitempty"`
+	Url                string            `yaml:"url"`
+	LogFile            string            `yaml:"log_file"`
+	Headers            map[string]string `yaml:"headers"`
+	Method             string            `yaml:"method"`
+	Timeout            string            `yaml:"timeout,omitempty"`
+	AllowedQueryParams []string          `yaml:"allowed_query,omitempty"`   // List of allowed query params to set
+	AllowedHeaders     []string          `yaml:"allowed_headers,omitempty"` // List of allowed headers variable to use, if empty allow all
 }

@@ -19,9 +19,11 @@ import (
 )
 
 type HttpExecutor struct {
-	config  config.HttpJobConfig
-	metrics *ExecutorMetrics
-	timeout time.Duration
+	config         config.HttpJobConfig
+	metrics        *ExecutorMetrics
+	timeout        time.Duration
+	allowedQuery   Acceptable
+	allowedHeaders Acceptable
 }
 
 func NewHttpExecutor(name string, cfg config.HttpJobConfig) *HttpExecutor {
@@ -49,6 +51,22 @@ func (executor *HttpExecutor) Init() error {
 	if err != nil {
 		return errors.Join(ErrUnableToParseUrl, err)
 	}
+
+	var acceptQuery Acceptable
+	if len(executor.config.AllowedQueryParams) > 0 {
+		acceptQuery = NewAcceptableValues(executor.config.AllowedQueryParams)
+	} else {
+		acceptQuery = NewAcceptableAll()
+	}
+	executor.allowedQuery = acceptQuery
+
+	var allowedHeaders Acceptable
+	if len(executor.config.AllowedHeaders) > 0 {
+		allowedHeaders = NewAcceptableValues(executor.config.AllowedHeaders)
+	} else {
+		allowedHeaders = NewAcceptableAll()
+	}
+	executor.allowedHeaders = allowedHeaders
 
 	return nil
 }
@@ -111,7 +129,11 @@ func (executor *HttpExecutor) Run(job gearman.Job) ([]byte, error) {
 	if len(payload.QueryParams) > 0 {
 		queryValues := u.Query()
 		for n, v := range payload.QueryParams {
-			queryValues.Set(n, v)
+			if executor.allowedQuery.Accept(n) {
+				queryValues.Set(n, v)
+			} else {
+				log.Printf("[Job %s]  : query param not allowed %s", jobId, n)
+			}
 		}
 		u.RawQuery = queryValues.Encode()
 	}
@@ -146,8 +168,8 @@ func (executor *HttpExecutor) Run(job gearman.Job) ([]byte, error) {
 		return nil, err
 	}
 
-	populateHeaders(req, executor.config.Headers)
-	populateHeaders(req, payload.Headers)
+	populateHeaders(req, executor.config.Headers, NewAcceptableAll())
+	populateHeaders(req, payload.Headers, executor.allowedHeaders)
 
 	client := &http.Client{Timeout: executor.timeout}
 
@@ -163,10 +185,12 @@ func (executor *HttpExecutor) Run(job gearman.Job) ([]byte, error) {
 	return nil, nil
 }
 
-func populateHeaders(req *http.Request, headers map[string]string) {
+func populateHeaders(req *http.Request, headers map[string]string, accepter Acceptable) {
 	if len(headers) > 0 {
 		for n, v := range headers {
-			req.Header.Set(n, v)
+			if accepter.Accept(n) {
+				req.Header.Set(n, v)
+			}
 		}
 	}
 }
